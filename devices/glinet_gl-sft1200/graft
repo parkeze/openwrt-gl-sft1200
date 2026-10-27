@@ -3,6 +3,8 @@
 # The kernel side of the GL-SFT1200 upstream work on OpenWrt main's 6.18: the
 # siflower target, with the device tree, NAND image recipe, board files and
 # the MaxLinear GSW1xx (GSW150) backport from Linux 7.x; the generic 6.18
-# patches and config it is built against; and the kernel packages, which know
-# 6.18's module paths and have kmod-dsa-mxl-gsw1xx.
-https://github.com/The1TrueJoe/openwrt 52f31638370b83e43189dce03e6fed3cb4c1ca03 target/linux/siflower target/linux/generic/backport-6.18 target/linux/generic/pending-6.18 target/linux/generic/hack-6.18 target/linux/generic/config-6.18 target/linux/generic/kernel-6.18 package/kernel/linux
+# patches, config and in-tree driver files it is built against (25.12's
+# generic/files are 6.12's, and fail on 6.18: rtl8306.c calls the removed
+# phy_driver_register); and the kernel packages, which know 6.18's module
+# paths and have kmod-dsa-mxl-gsw1xx.
+https://github.com/The1TrueJoe/openwrt 52f31638370b83e43189dce03e6fed3cb4c1ca03 target/linux/siflower target/linux/generic/backport-6.18 target/linux/generic/pending-6.18 target/linux/generic/hack-6.18 target/linux/generic/config-6.18 target/linux/generic/kernel-6.18 target/linux/generic/files package/kernel/linux

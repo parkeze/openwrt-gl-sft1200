@@ -9,9 +9,9 @@ with a different `build.sh`: see "Why not the template's build" below.
 
 ## Status
 
-Not built yet, and not booted. The flash map, MACs, ports, buttons and RGMII
-delay are from a unit harvested on GL's firmware 4.8.3; what is marked
-**unverified** is read from GL.iNet's and Siflower's sources, not the board.
+Not built yet, and not booted. The flash map, MACs, ports, buttons, U-Boot's
+behaviour and both RGMII delays are from a unit harvested on GL's firmware
+4.8.3; what is marked **unverified** is not.
 
 ## The GL-SFT1200
 
@@ -58,8 +58,12 @@ U-Boot (2016.07, GL's web failsafe 24.04.11) has an empty environment
 partition and boots its compiled-in `bootcmd`: read 0x300000 bytes from
 0xc0000, `bootm`. So the kernel has to fit 3 MiB, which the image recipe
 checks, and changing the environment from Linux does nothing. The SoC's RGMII delay is the
-factory string (`110a` on the harvested unit: TX 0x11, RX 0x0a); the switch's
-own delay on port 5 is **unverified**.
+factory string (`110a` on the harvested unit: TX 0x11, RX 0x0a), and GL's
+switch driver clears the switch's own delays on port 5 (PCDU `0xF101` reads 0
+on a running unit). Port 5 is `rgmii-id` with both internal delays set to 0:
+lantiq_gswip reads a CPU port's mode from the GMAC's side and would give plain
+`rgmii` 2 ns each way. The switch answers at SMI address 0 on the GMAC's own
+MDIO.
 
 ## Why the kernel is 6.18 and the userland is 25.12.6
 
@@ -116,8 +120,8 @@ Linux, on a case-sensitive filesystem, with
 
    Copy every file off the unit. The factory partition is the one thing a
    reflash cannot bring back.
-2. **Settle what is unverified here**: the switch's own RGMII delay on port 5,
-   which decides `rgmii` or `rgmii-id` there.
+2. **Settle what is unverified here**: the serial pads, and whether the
+   slide switch's events are wanted for anything.
 3. **Boot from RAM first**, if the serial console is reachable: interrupt
    autoboot (2 s), `tftpboot 0x81000000 <initramfs-kernel.bin>`, `bootm`.
    That writes nothing. Then install `squashfs-factory.img` with GL's U-Boot

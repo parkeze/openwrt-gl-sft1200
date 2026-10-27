@@ -7,8 +7,13 @@
  * The flash map, MACs, ports and buttons are a unit's, harvested from GL's
  * firmware 4.8.3. The switch binding is Hans Ulli Kroll's
  * sf19a2890_glinet-sft1200.dts, reported working on a unit booted from
- * initramfs. The switch's own RGMII delay is unverified: the SoC's comes from
- * the factory partition, as GL's driver takes it.
+ * initramfs, at SMI address 0 as GL's driver reaches it.
+ *
+ * The RGMII link between the GMAC and switch port 5 has both of its delays on
+ * the SoC side, from the factory partition, as GL's driver programs them; GL's
+ * switch driver clears port 5's own delays (PCDU 0xF101 reads 0 on a running
+ * unit). Port 5 says so outright, below, because its phy-mode alone would not:
+ * lantiq_gswip gives a CPU port in plain "rgmii" a 2 ns delay each way.
  */
 
 /dts-v1/;
@@ -63,7 +68,7 @@
 	nvmem-cell-names = "mac-address", "rgmii-delay";
 
 	status = "okay";
-	phy-mode = "rgmii-id";
+	phy-mode = "rgmii";
 	snps,ps-speed = <1000>;
 
 	/*
@@ -210,9 +215,15 @@
 				phy-mode = "internal";
 			};
 
+			/*
+			 * "rgmii-id": the GMAC's side supplies the delays, so the
+			 * switch adds none, which the zero delays make certain.
+			 */
 			port@5 {
 				reg = <5>;
 				phy-mode = "rgmii-id";
+				rx-internal-delay-ps = <0>;
+				tx-internal-delay-ps = <0>;
 				ethernet = <&gmac>;
 
 				fixed-link {

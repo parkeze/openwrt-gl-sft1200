@@ -125,8 +125,13 @@ log "Configuring"
   echo "CONFIG_ALL_KMODS=y"
   echo "CONFIG_ALL_NONSHARED=y"
   # The release's version and repository, so the ImageBuilder installs the
-  # release's userland and an image says which release it is.
+  # release's userland and an image says which release it is. VERSIONOPT is
+  # only offered with IMAGEOPT; without it defconfig drops the lot, and the
+  # files come out without the version in their names, which is the name
+  # ParkezeOS's build.sh downloads the ImageBuilder by.
+  echo "CONFIG_IMAGEOPT=y"
   echo "CONFIG_VERSIONOPT=y"
+  echo "CONFIG_VERSION_FILENAMES=y"
   echo "CONFIG_VERSION_DIST=\"OpenWrt\""
   echo "CONFIG_VERSION_NUMBER=\"${VERSION}\""
   echo "CONFIG_VERSION_REPO=\"${REPO}\""
@@ -153,6 +158,7 @@ for d in ${devices}; do
     || die "device ${d} did not survive defconfig; is its recipe in the patch valid?"
 done
 grep -q '^CONFIG_LINUX_6_18=y' .config || die "the graft did not make this a 6.18 target"
+grep -q '^CONFIG_VERSION_FILENAMES=y' .config || die "defconfig dropped the version options"
 
 log "Building the toolchain and the kernel"
 make download -j8 >/dev/null

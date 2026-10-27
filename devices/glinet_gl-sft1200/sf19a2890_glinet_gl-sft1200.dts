@@ -1,0 +1,221 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * GL.iNet GL-SFT1200 (Opal): Siflower SF19A2890, 128 MiB RAM, 128 MiB SPI
+ * NAND, a MaxLinear GSW150 switch on the GMAC's RGMII with one WAN and two
+ * LAN ports, USB 2.0.
+ *
+ * Written from GL.iNet's 18.06 device tree (sf19a28_fullmask_ac28nand.dts in
+ * Siflower's SDK) for the flash map, buttons and GMAC delay, and from Hans
+ * Ulli Kroll's sf19a2890_glinet-sft1200.dts for the switch, which was
+ * reported working on a unit booted from initramfs. Port order, the MAC
+ * offsets and the RGMII delay are unverified until a unit is harvested.
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include "sf19a2890.dtsi"
+
+/ {
+	model = "GL.iNet GL-SFT1200";
+	compatible = "glinet,gl-sft1200", "siflower,sf19a2890";
+
+	aliases {
+		serial0 = &uart0;
+		label-mac-device = &gmac;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x8000000>;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		/* The slide switch on the side. */
+		mode {
+			label = "mode";
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_0>;
+			linux,input-type = <EV_SW>;
+		};
+	};
+};
+
+&gmac {
+	nvmem-cells = <&macaddr_factory_0 0>;
+	nvmem-cell-names = "mac-address";
+
+	status = "okay";
+	phy-mode = "rgmii-id";
+	snps,ps-speed = <1000>;
+
+	/*
+	 * stmmac reads these without the "snps," prefix. Without them its TX
+	 * FIFO size is 0, every MTU change is refused, and DSA cannot reserve
+	 * room for its tag on the conduit.
+	 */
+	tx-fifo-depth = <4096>;
+	rx-fifo-depth = <4096>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+		pause;
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&usb {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <30000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "spl-loader";
+				reg = <0x0 0x20000>;
+				read-only;
+			};
+
+			partition@20000 {
+				label = "u-boot";
+				reg = <0x20000 0x60000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "u-boot-env";
+				reg = <0x80000 0x20000>;
+			};
+
+			partition@a0000 {
+				label = "factory";
+				reg = <0xa0000 0x20000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_factory_0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			/*
+			 * GL's firmware partition, as its U-Boot loads it: a raw
+			 * kernel at 0xc0000, padded to 4 MiB, then UBI.
+			 */
+			partition@c0000 {
+				label = "kernel";
+				reg = <0xc0000 0x400000>;
+			};
+
+			partition@4c0000 {
+				label = "ubi";
+				reg = <0x4c0000 0x7b40000>;
+			};
+		};
+	};
+};
+
+&mdio {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	switch@0 {
+		compatible = "intel,gsw150";
+		reg = <0x0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "wan";
+				phy-handle = <&switchphy0>;
+				phy-mode = "internal";
+				nvmem-cells = <&macaddr_factory_0 1>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+				phy-handle = <&switchphy1>;
+				phy-mode = "internal";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+				phy-handle = <&switchphy2>;
+				phy-mode = "internal";
+			};
+
+			port@5 {
+				reg = <5>;
+				phy-mode = "rgmii-id";
+				ethernet = <&gmac>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			switchphy0: ethernet-phy@0 {
+				reg = <0>;
+			};
+
+			switchphy1: ethernet-phy@1 {
+				reg = <1>;
+			};
+
+			switchphy2: ethernet-phy@2 {
+				reg = <2>;
+			};
+		};
+	};
+};

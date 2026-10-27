@@ -1,0 +1,108 @@
+diff --git a/target/linux/siflower/Makefile b/target/linux/siflower/Makefile
+index e734f06..295d3a5 100644
+--- a/target/linux/siflower/Makefile
++++ b/target/linux/siflower/Makefile
+@@ -4,10 +4,10 @@ include $(TOPDIR)/rules.mk
+ ARCH:=mipsel
+ BOARD:=siflower
+ BOARDNAME:=Siflower SoCs
+-FEATURES:=squashfs usb usbgadget
++FEATURES:=squashfs usb usbgadget nand
+ SUBTARGETS:=sf19a2890 sf21
+ 
+-KERNEL_PATCHVER:=6.12
++KERNEL_PATCHVER:=6.18
+ 
+ include $(INCLUDE_DIR)/target.mk
+ 
+diff --git a/target/linux/siflower/image/sf19a2890.mk b/target/linux/siflower/image/sf19a2890.mk
+index e237e8a..b19d460 100644
+--- a/target/linux/siflower/image/sf19a2890.mk
++++ b/target/linux/siflower/image/sf19a2890.mk
+@@ -38,9 +38,20 @@ endef
+ TARGET_DEVICES += glinet_gl-sf1200
+ 
+ define Device/glinet_gl-sft1200
+-  DEVICE_VENDOR := GL.iNET
++  DEVICE_VENDOR := GL.iNet
+   DEVICE_MODEL := GL-SFT1200
+-  BOARD_NAME := glinet,sft1200
+-  DEVICE_DTS := sf19a2890_glinet-sft1200
++  DEVICE_ALT0_VENDOR := GL.iNet
++  DEVICE_ALT0_MODEL := Opal
++  BOARD_NAME := glinet,gl-sft1200
++  DEVICE_DTS := sf19a2890_glinet_gl-sft1200
++  DEVICE_PACKAGES := kmod-phy-sf19a2890-usb
++  BLOCKSIZE := 128k
++  PAGESIZE := 2048
++  KERNEL_SIZE := 4096k
++  IMAGE_SIZE := 130304k
++  UBINIZE_OPTS := -E 5
++  IMAGES := factory.img sysupgrade.bin
++  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | check-size
++  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+ endef
+ TARGET_DEVICES += glinet_gl-sft1200
+diff --git a/target/linux/siflower/sf19a2890/base-files/etc/board.d/02_network b/target/linux/siflower/sf19a2890/base-files/etc/board.d/02_network
+index f3da214..e7a81cc 100644
+--- a/target/linux/siflower/sf19a2890/base-files/etc/board.d/02_network
++++ b/target/linux/siflower/sf19a2890/base-files/etc/board.d/02_network
+@@ -8,6 +8,9 @@ siflower_setup_interfaces()
+ 	local board="$1"
+ 
+ 	case $board in
++	glinet,gl-sft1200)
++		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
++		;;
+ 	siflower,sf19a2890-evb)
+ 		ucidef_add_switch "switch0" \
+ 			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6@eth0"
+diff --git a/target/linux/siflower/sf19a2890/base-files/lib/upgrade/platform.sh b/target/linux/siflower/sf19a2890/base-files/lib/upgrade/platform.sh
+index 80cf1cd..7146fb6 100644
+--- a/target/linux/siflower/sf19a2890/base-files/lib/upgrade/platform.sh
++++ b/target/linux/siflower/sf19a2890/base-files/lib/upgrade/platform.sh
+@@ -5,6 +5,10 @@ platform_check_image() {
+ 	local board=$(board_name)
+ 
+ 	case "$board" in
++	glinet,gl-sft1200)
++		nand_do_platform_check "$board" "$1"
++		return $?
++		;;
+ 	*)
+ 		return 0
+ 		;;
+@@ -15,6 +19,10 @@ platform_do_upgrade() {
+ 	local board=$(board_name)
+ 
+ 	case "$board" in
++	glinet,gl-sft1200)
++		CI_KERNPART="kernel"
++		nand_do_upgrade "$1"
++		;;
+ 	*)
+ 		default_do_upgrade "$1"
+ 		;;
+diff --git a/target/linux/siflower/sf19a2890/config-6.18 b/target/linux/siflower/sf19a2890/config-6.18
+index bac5f64..59fa14d 100644
+--- a/target/linux/siflower/sf19a2890/config-6.18
++++ b/target/linux/siflower/sf19a2890/config-6.18
+@@ -181,6 +181,10 @@ CONFIG_MTD_SPI_NAND=y
+ CONFIG_MTD_SPI_NOR_USE_4K_SECTORS=y
+ CONFIG_MTD_SPLIT_FIT_FW=y
+ CONFIG_MTD_SPLIT_UIMAGE_FW=y
++CONFIG_MTD_UBI=y
++CONFIG_MTD_UBI_BEB_LIMIT=20
++CONFIG_MTD_UBI_BLOCK=y
++CONFIG_MTD_UBI_WL_THRESHOLD=4096
+ CONFIG_NEED_DMA_MAP_STATE=y
+ CONFIG_NEED_SRCU_NMI_SAFE=y
+ CONFIG_NET_DEVLINK=y
+@@ -291,6 +295,7 @@ CONFIG_TIMER_OF=y
+ CONFIG_TIMER_PROBE=y
+ CONFIG_TREE_RCU=y
+ CONFIG_TREE_SRCU=y
++CONFIG_UBIFS_FS=y
+ CONFIG_USB=y
+ CONFIG_USB_DWC2=y
+ CONFIG_USB_SUPPORT=y

@@ -1,0 +1,7 @@
+# <repository> <commit> <path>...
+#
+# The kernel side of Hans Ulli Kroll's siflower work on 6.18: the target, with
+# the GSW150 (lantiq_gswip GSW1xx from Linux 7.0), SPI NAND, I2C and USB; the
+# generic 6.18 patches and config it was built against; and the kernel
+# packages from the same commit, which know 6.18's module paths.
+https://github.com/ulli-kroll/openwrt 3dcbd9274bc1b065f9490645bae89c025b174e14 target/linux/siflower target/linux/generic/backport-6.18 target/linux/generic/hack-6.18 target/linux/generic/pending-6.18 target/linux/generic/config-6.18 target/linux/generic/kernel-6.18 package/kernel/linux

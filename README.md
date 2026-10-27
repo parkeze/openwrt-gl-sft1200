@@ -63,8 +63,12 @@ factory string (`110a` on the harvested unit: TX 0x11, RX 0x0a), and GL's
 switch driver clears the switch's own delays on port 5 (PCDU `0xF101` reads 0
 on a running unit). Port 5 is `rgmii-id` with both internal delays set to 0:
 lantiq_gswip reads a CPU port's mode from the GMAC's side and would give plain
-`rgmii` 2 ns each way. The switch answers at SMI address 0 on the GMAC's own
-MDIO.
+`rgmii` 2 ns each way. The switch answers at SMI address 31 (0x1f) on the
+GMAC's own MDIO, and nowhere else: MANU_ID 0x1713, PNUM_ID 0x3003, MII_CFG5
+0x4044, read on the unit by bit-banging MDIO on GPIO 28 and 29. Its reset is
+GPIO 0, active low. At address 0 mxl-gsw1xx fails its probe with -ENODEV, there
+is no DSA and no LAN, and that is how the first flash came up with no
+network.
 
 ## Why the kernel is 6.18 and the userland is 25.12.6
 

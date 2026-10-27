@@ -74,12 +74,16 @@
 	snps,ps-speed = <1000>;
 
 	/*
-	 * stmmac reads these without the "snps," prefix. Without them its TX
-	 * FIFO size is 0, every MTU change is refused, and DSA cannot reserve
-	 * room for its tag on the conduit.
+	 * The FIFO sizes are not documented and this DWMAC 3.73a does not
+	 * report them. Without a TX FIFO size stmmac refuses any MTU change,
+	 * so DSA cannot make room for the switch tag on the conduit. The
+	 * vendor firmware sends 1522-byte VLAN-tagged frames in TX
+	 * store-and-forward mode, so the TX FIFO holds at least 2 KiB. An RX
+	 * FIFO size below 4 KiB keeps hardware flow control off, as the
+	 * vendor driver leaves it.
 	 */
-	tx-fifo-depth = <4096>;
-	rx-fifo-depth = <4096>;
+	tx-fifo-depth = <2048>;
+	rx-fifo-depth = <2048>;
 
 	fixed-link {
 		speed = <1000>;

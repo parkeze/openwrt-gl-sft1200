@@ -14,8 +14,8 @@
 #     no config.buildinfo and no kmods for it, only the userland feeds for its
 #     architecture (mipsel_24kc_24kf).
 #   * The GL-SFT1200's switch, a MaxLinear GSW150, needs the lantiq_gswip
-#     GSW1xx series from Linux 7.0, which Hans Ulli Kroll has carried on 6.18.
-#     The release's siflower target is 6.12.
+#     GSW1xx series from Linux 7.x, backported to OpenWrt main's 6.18 by the
+#     GL-SFT1200 upstream work. The release's siflower target is 6.12.
 #
 # So the tree is the release tag, with the kernel side (target/linux/siflower,
 # the generic 6.18 patches and config, and the kernel packages) grafted from
@@ -25,8 +25,9 @@
 # other. The kernel and every kmod are built here and carried in the
 # ImageBuilder's own packages/, since nothing upstream has them.
 #
-# Every devices/<board>/ holds a DTS, a patch against the grafted tree and the
-# graft. The directory's name is the device's name in the image recipe.
+# Every devices/<board>/ holds the graft, and optionally a DTS and a patch
+# against the grafted tree for anything the grafted target does not have. The
+# directory's name is the device's name in the image recipe.
 #
 # Linux, on a case-sensitive filesystem.
 
@@ -95,8 +96,8 @@ for dir in "${ROOT}"/devices/*/; do
     # shellcheck disable=SC2086
     graft "${url}" "${commit}" ${paths}
   done < "${dir}graft"
-  cp "${dir}"*.dts* "target/linux/${TARGET}/dts/"
-  git apply "${dir}openwrt.patch"
+  ls "${dir}"*.dts* >/dev/null 2>&1 && cp "${dir}"*.dts* "target/linux/${TARGET}/dts/"
+  [ -f "${dir}openwrt.patch" ] && git apply "${dir}openwrt.patch"
   devices="${devices} ${device}"
 done
 [ -n "${devices// }" ] || die "no devices found"
@@ -134,7 +135,9 @@ log "Configuring"
   echo "# CONFIG_SDK is not set"
   echo "# CONFIG_MAKE_TOOLCHAIN is not set"
   # No BPF toolchain: it is LLVM, built from source for hours, and nothing
-  # this ImageBuilder installs needs it.
+  # this ImageBuilder installs needs it. The choice is only offered with
+  # DEVEL; without it the setting is dropped and LLVM is built anyway.
+  echo "CONFIG_DEVEL=y"
   echo "CONFIG_BPF_TOOLCHAIN_NONE=y"
   # A RAM-only image, for a first boot from the bootloader that writes nothing.
   echo "CONFIG_TARGET_ROOTFS_INITRAMFS=y"
@@ -150,7 +153,9 @@ grep -q '^CONFIG_LINUX_6_18=y' .config || die "the graft did not make this a 6.1
 log "Building the toolchain and the kernel"
 make download -j8 >/dev/null
 make -j"$(nproc)" tools/install toolchain/install
-make -j"$(nproc)" target/linux/compile
+# Verbose and single-threaded on failure, or the log says only "target/linux
+# failed to build".
+make -j"$(nproc)" target/linux/compile || make -j1 V=s target/linux/compile
 
 log "Building the kmods and the images"
 # A kmod that fails to build costs nothing unless an image needs it, and then

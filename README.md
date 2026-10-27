@@ -31,7 +31,8 @@ behaviour and both RGMII delays are from a unit harvested on GL's firmware
 The switch is a GSW150, not the Airoha AN8855 of the Banana Pi BPI-WiFi5,
 which shares the SoC. GL's device tree (`sf19a28_fullmask_ac28nand.dts` in
 Siflower's 18.06 SDK) and Siflower's switch driver (`sf_eswitch`, `intel7084`)
-say so, as does Hans Ulli Kroll's device tree for the board.
+say so, as does Hans Ulli Kroll's device tree for the board, which first
+brought it up on 6.18.
 
 ### Flash map
 
@@ -68,18 +69,21 @@ MDIO.
 ## Why the kernel is 6.18 and the userland is 25.12.6
 
 - **The switch.** GSW150 support is the lantiq_gswip GSW1xx series that
-  reached Linux in 7.0. Hans Ulli Kroll carries it on 6.18, with the DSA core
-  and tag changes it needs, SPI NAND, I2C and USB for the SoC
-  ([ulli-kroll/openwrt](https://github.com/ulli-kroll/openwrt), branch
-  `openwrt-siflower/v6.18/sf19/master`). Taking it to 25.12's 6.12 would also
-  mean every lantiq_gswip change from 6.13 to 6.18 under it.
+  reached Linux in 7.0, and fixes from 7.4. It is backported to OpenWrt main's
+  6.18, with the device tree, SPI NAND and UBI and the NAND image recipe, on
+  [The1TrueJoe/openwrt](https://github.com/The1TrueJoe/openwrt) branch
+  `siflower-gl-sft1200`, the work meant for upstream. Taking it to 25.12's 6.12
+  would also mean every lantiq_gswip change from 6.13 to 6.18 under it.
 - **The userland.** A build from OpenWrt main would give this one board a
   different ucode, netifd and fw4 from every other ParkezeOS gateway, and
   main's package feeds change daily.
 
 So `build.sh` builds the v25.12.6 tree with the kernel side grafted in from a
-pinned commit (`devices/glinet_gl-sft1200/graft`): `target/linux/siflower`,
-the generic 6.18 patches and config, and `package/kernel/linux`. The
+pinned commit of that branch (`devices/glinet_gl-sft1200/graft`):
+`target/linux/siflower`, the generic 6.18 patches and config, and
+`package/kernel/linux`. The device tree, image recipe and board files are the
+upstream work's own, so this repo and the upstream submission describe the
+board identically. The
 ImageBuilder takes userland from the 25.12.6 release's `mipsel_24kc_24kf`
 feeds and carries the kernel and every kmod itself.
 

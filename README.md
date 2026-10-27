@@ -9,9 +9,9 @@ with a different `build.sh`: see "Why not the template's build" below.
 
 ## Status
 
-Not built yet, and not booted. No unit has been harvested; everything below
-marked **unverified** is read from GL.iNet's and Siflower's sources, not a
-board.
+Not built yet, and not booted. The flash map, MACs, ports, buttons and RGMII
+delay are from a unit harvested on GL's firmware 4.8.3; what is marked
+**unverified** is read from GL.iNet's and Siflower's sources, not the board.
 
 ## The GL-SFT1200
 
@@ -25,7 +25,7 @@ board.
 | Buttons | reset on GPIO 27, a slide switch on GPIO 1, both active low |
 | Light | an ET6326 LED driver on I2C at 0x30, not driven yet |
 | Wi-Fi | Siflower's own radios, vendor FullMAC driver only; off |
-| Serial | 115200 8N1, inside the case **(pads unverified)** |
+| Serial | ttyS0, 115200 8N1, inside the case **(pads unverified)** |
 | Power | 5 V over USB-C |
 
 The switch is a GSW150, not the Airoha AN8855 of the Banana Pi BPI-WiFi5,
@@ -43,9 +43,16 @@ untouched.
 | 0x0000000 | 0x20000 | spl-loader (read-only) |
 | 0x0020000 | 0x60000 | u-boot (read-only) |
 | 0x0080000 | 0x20000 | u-boot-env |
-| 0x00a0000 | 0x20000 | factory: MAC addresses **(offsets unverified)** (read-only) |
+| 0x00a0000 | 0x20000 | factory: base MAC at 0x0, RGMII delay string at 0xb2, Wi-Fi calibration at 0x800 (read-only) |
 | 0x00c0000 | 0x400000 | kernel: a raw uImage, where GL's U-Boot loads it from |
-| 0x04c0000 | 0x7b40000 | ubi: rootfs and rootfs_data |
+| 0x04c0000 | 0x7940000 | ubi: rootfs and rootfs_data |
+| 0x7e00000 | 0x40000 | log: GL's mtdoops |
+| 0x7e40000 | 0x1c0000 | unmapped, as GL leaves it |
+
+WAN is the factory base MAC and LAN the next. The switch's ports are WAN 0,
+LAN1 1 and LAN2 2, with the GMAC on port 5. The SoC's RGMII delay is the
+factory string (`110a` on the harvested unit: TX 0x11, RX 0x0a); the switch's
+own delay on port 5 is **unverified**.
 
 ## Why the kernel is 6.18 and the userland is 25.12.6
 
@@ -102,10 +109,8 @@ Linux, on a case-sensitive filesystem, with
 
    Copy every file off the unit. The factory partition is the one thing a
    reflash cannot bring back.
-2. **Settle what is unverified here**: which physical port is `wan`, `lan1` and
-   `lan2`, the MAC offsets in `factory`, and the RGMII delay. GL's tree sets
-   `delay = <0x17 0x17>`; this one leaves the SoC's delay registers alone and
-   relies on `rgmii-id`, as Kroll's working tree does.
+2. **Settle what is unverified here**: the switch's own RGMII delay on port 5,
+   which decides `rgmii` or `rgmii-id` there.
 3. **Boot from RAM first**, if the serial console is reachable:
    `initramfs-kernel.bin` from U-Boot (`tftpboot` then `bootm`) writes
    nothing. Then install `squashfs-factory.img` with GL's U-Boot web

@@ -44,13 +44,20 @@ untouched.
 | 0x0020000 | 0x60000 | u-boot (read-only) |
 | 0x0080000 | 0x20000 | u-boot-env |
 | 0x00a0000 | 0x20000 | factory: base MAC at 0x0, RGMII delay string at 0xb2, Wi-Fi calibration at 0x800 (read-only) |
-| 0x00c0000 | 0x400000 | kernel: a raw uImage, where GL's U-Boot loads it from |
+| 0x00c0000 | 0x400000 | kernel: a raw uImage, of which U-Boot reads only the first 3 MiB |
 | 0x04c0000 | 0x7940000 | ubi: rootfs and rootfs_data |
 | 0x7e00000 | 0x40000 | log: GL's mtdoops |
 | 0x7e40000 | 0x1c0000 | unmapped, as GL leaves it |
 
 WAN is the factory base MAC and LAN the next. The switch's ports are WAN 0,
-LAN1 1 and LAN2 2, with the GMAC on port 5. The SoC's RGMII delay is the
+then 1 for the LAN jack beside it and 2 for the one at the end, with the GMAC
+on port 5. GL's firmware calls port 2 LAN 1 and port 1 LAN 2, and so does this
+device tree (`lan1`, `lan2`).
+
+U-Boot (2016.07, GL's web failsafe 24.04.11) has an empty environment
+partition and boots its compiled-in `bootcmd`: read 0x300000 bytes from
+0xc0000, `bootm`. So the kernel has to fit 3 MiB, which the image recipe
+checks, and changing the environment from Linux does nothing. The SoC's RGMII delay is the
 factory string (`110a` on the harvested unit: TX 0x11, RX 0x0a); the switch's
 own delay on port 5 is **unverified**.
 
@@ -111,10 +118,11 @@ Linux, on a case-sensitive filesystem, with
    reflash cannot bring back.
 2. **Settle what is unverified here**: the switch's own RGMII delay on port 5,
    which decides `rgmii` or `rgmii-id` there.
-3. **Boot from RAM first**, if the serial console is reachable:
-   `initramfs-kernel.bin` from U-Boot (`tftpboot` then `bootm`) writes
-   nothing. Then install `squashfs-factory.img` with GL's U-Boot web
-   recovery, below.
+3. **Boot from RAM first**, if the serial console is reachable: interrupt
+   autoboot (2 s), `tftpboot 0x81000000 <initramfs-kernel.bin>`, `bootm`.
+   That writes nothing. Then install `squashfs-factory.img` with GL's U-Boot
+   web recovery, below, through its "Update firmware" page only: the same
+   page also offers U-Boot and ART uploads.
 
 ## Recovery
 

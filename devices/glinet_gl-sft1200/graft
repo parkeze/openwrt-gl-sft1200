@@ -8,4 +8,4 @@
 # phy_driver_register); and the kernel packages, which know 6.18's module
 # paths and have kmod-dsa-mxl-gsw1xx, with gpio-button-hotplug, the one kernel
 # package outside it the board needs, for its reset button.
-https://github.com/The1TrueJoe/openwrt 52f31638370b83e43189dce03e6fed3cb4c1ca03 target/linux/siflower target/linux/generic/backport-6.18 target/linux/generic/pending-6.18 target/linux/generic/hack-6.18 target/linux/generic/config-6.18 target/linux/generic/kernel-6.18 target/linux/generic/files package/kernel/linux package/kernel/gpio-button-hotplug
+https://github.com/The1TrueJoe/openwrt a1710648ffe42f92fa16fe7f04fcb0300b3b2674 target/linux/siflower target/linux/generic/backport-6.18 target/linux/generic/pending-6.18 target/linux/generic/hack-6.18 target/linux/generic/config-6.18 target/linux/generic/kernel-6.18 target/linux/generic/files package/kernel/linux package/kernel/gpio-button-hotplug

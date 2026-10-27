@@ -60,11 +60,13 @@
 };
 
 /*
- * The WAN port takes the factory base address, and the conduit, with every
- * LAN port, the next one, as GL's firmware does.
+ * The conduit and the WAN port take the factory base address, the one on the
+ * label, and each LAN port the next one, as GL's firmware has eth0 and its LAN.
+ * ParkezeOS derives a gateway's serial and EUI from eth0, so they are the
+ * label's MAC.
  */
 &gmac {
-	nvmem-cells = <&macaddr_factory_0 1>, <&rgmii_delay>;
+	nvmem-cells = <&macaddr_factory_0 0>, <&rgmii_delay>;
 	nvmem-cell-names = "mac-address", "rgmii-delay";
 
 	status = "okay";
@@ -205,6 +207,8 @@
 				label = "lan2";
 				phy-handle = <&switchphy1>;
 				phy-mode = "internal";
+				nvmem-cells = <&macaddr_factory_0 1>;
+				nvmem-cell-names = "mac-address";
 			};
 
 			/* The jack at the end, away from WAN: GL's LAN 1. */
@@ -213,6 +217,8 @@
 				label = "lan1";
 				phy-handle = <&switchphy2>;
 				phy-mode = "internal";
+				nvmem-cells = <&macaddr_factory_0 1>;
+				nvmem-cell-names = "mac-address";
 			};
 
 			/*

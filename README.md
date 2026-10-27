@@ -49,7 +49,7 @@ untouched.
 | 0x7e00000 | 0x40000 | log: GL's mtdoops |
 | 0x7e40000 | 0x1c0000 | unmapped, as GL leaves it |
 
-WAN is the factory base MAC and LAN the next. The switch's ports are WAN 0,
+eth0 and WAN are the factory base MAC, the one on the label, and LAN the next. The switch's ports are WAN 0,
 then 1 for the LAN jack beside it and 2 for the one at the end, with the GMAC
 on port 5. GL's firmware calls port 2 LAN 1 and port 1 LAN 2, and so does this
 device tree (`lan1`, `lan2`).

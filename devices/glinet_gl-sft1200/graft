@@ -5,4 +5,4 @@
 # the MaxLinear GSW1xx (GSW150) backport from Linux 7.x; the generic 6.18
 # patches and config it is built against; and the kernel packages, which know
 # 6.18's module paths and have kmod-dsa-mxl-gsw1xx.
-https://github.com/The1TrueJoe/openwrt a35e182a6331e1b9efc9520a0f8d016ce46443d6 target/linux/siflower target/linux/generic/backport-6.18 target/linux/generic/pending-6.18 target/linux/generic/hack-6.18 target/linux/generic/config-6.18 target/linux/generic/kernel-6.18 package/kernel/linux
+https://github.com/The1TrueJoe/openwrt bcf7298a762012f48943db86ec93055fd9a62687 target/linux/siflower target/linux/generic/backport-6.18 target/linux/generic/pending-6.18 target/linux/generic/hack-6.18 target/linux/generic/config-6.18 target/linux/generic/kernel-6.18 package/kernel/linux

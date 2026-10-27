@@ -141,6 +141,10 @@ log "Configuring"
   echo "CONFIG_BPF_TOOLCHAIN_NONE=y"
   # A RAM-only image, for a first boot from the bootloader that writes nothing.
   echo "CONFIG_TARGET_ROOTFS_INITRAMFS=y"
+  # -Os. GL's U-Boot loads 3 MiB of the kernel slot, and at -O2 this kernel is
+  # about 200 KB over it. The upstream series makes it this target's default
+  # in config/Config-kernel.in, which the graft does not carry.
+  echo "CONFIG_KERNEL_CC_OPTIMIZE_FOR_SIZE=y"
 } > .config
 make defconfig >/dev/null
 

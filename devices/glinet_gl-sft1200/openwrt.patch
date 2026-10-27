@@ -15,8 +15,36 @@ index e734f06..295d3a5 100644
  
  include $(INCLUDE_DIR)/target.mk
  
+diff --git a/target/linux/siflower/files-6.18/drivers/net/ethernet/stmicro/stmmac/dwmac-sf19a2890.c b/target/linux/siflower/files-6.18/drivers/net/ethernet/stmicro/stmmac/dwmac-sf19a2890.c
+index b6b021f..28074e7 100644
+--- a/target/linux/siflower/files-6.18/drivers/net/ethernet/stmicro/stmmac/dwmac-sf19a2890.c
++++ b/target/linux/siflower/files-6.18/drivers/net/ethernet/stmicro/stmmac/dwmac-sf19a2890.c
+@@ -47,6 +47,7 @@ static int sfgmac_set_delay_from_nvmem(struct sf19a2890_gmac_priv *priv)
+ 	size_t retlen;
+ 	u16 gmac_delay;
+ 	u8 delay_tx, delay_rx;
++	char delay_str[SFGMAC_DELAY_STR_LEN + 1];
+ 
+ 	cell = of_nvmem_cell_get(np, "rgmii-delay");
+ 	if (IS_ERR(cell))
+@@ -63,7 +64,14 @@ static int sfgmac_set_delay_from_nvmem(struct sf19a2890_gmac_priv *priv)
+ 		goto exit;
+ 	}
+ 
+-	ret = kstrtou16(data, 16, &gmac_delay);
++	/*
++	 * The cell is the four hex digits and nothing after them, so it is
++	 * terminated here: kstrtou16() on the cell itself reads past its end and
++	 * fails, and the delay registers keep their reset values.
++	 */
++	memcpy(delay_str, data, SFGMAC_DELAY_STR_LEN);
++	delay_str[SFGMAC_DELAY_STR_LEN] = '\0';
++	ret = kstrtou16(delay_str, 16, &gmac_delay);
+ 	if (ret == 0) {
+ 		delay_tx = (gmac_delay >> 8) & 0xff;
+ 		delay_rx = gmac_delay & 0xff;
 diff --git a/target/linux/siflower/image/sf19a2890.mk b/target/linux/siflower/image/sf19a2890.mk
-index e237e8a..b19d460 100644
+index e237e8a..aeba0a2 100644
 --- a/target/linux/siflower/image/sf19a2890.mk
 +++ b/target/linux/siflower/image/sf19a2890.mk
 @@ -38,9 +38,20 @@ endef
@@ -36,7 +64,7 @@ index e237e8a..b19d460 100644
 +  BLOCKSIZE := 128k
 +  PAGESIZE := 2048
 +  KERNEL_SIZE := 4096k
-+  IMAGE_SIZE := 130304k
++  IMAGE_SIZE := 128256k
 +  UBINIZE_OPTS := -E 5
 +  IMAGES := factory.img sysupgrade.bin
 +  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | check-size

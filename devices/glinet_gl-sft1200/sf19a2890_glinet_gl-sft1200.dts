@@ -4,11 +4,11 @@
  * NAND, a MaxLinear GSW150 switch on the GMAC's RGMII with one WAN and two
  * LAN ports, USB 2.0.
  *
- * Written from GL.iNet's 18.06 device tree (sf19a28_fullmask_ac28nand.dts in
- * Siflower's SDK) for the flash map, buttons and GMAC delay, and from Hans
- * Ulli Kroll's sf19a2890_glinet-sft1200.dts for the switch, which was
- * reported working on a unit booted from initramfs. Port order, the MAC
- * offsets and the RGMII delay are unverified until a unit is harvested.
+ * The flash map, MACs, ports and buttons are a unit's, harvested from GL's
+ * firmware 4.8.3. The switch binding is Hans Ulli Kroll's
+ * sf19a2890_glinet-sft1200.dts, reported working on a unit booted from
+ * initramfs. The switch's own RGMII delay is unverified: the SoC's comes from
+ * the factory partition, as GL's driver takes it.
  */
 
 /dts-v1/;
@@ -54,9 +54,13 @@
 	};
 };
 
+/*
+ * The WAN port takes the factory base address, and the conduit, with every
+ * LAN port, the next one, as GL's firmware does.
+ */
 &gmac {
-	nvmem-cells = <&macaddr_factory_0 0>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_factory_0 1>, <&rgmii_delay>;
+	nvmem-cell-names = "mac-address", "rgmii-delay";
 
 	status = "okay";
 	phy-mode = "rgmii-id";
@@ -134,6 +138,11 @@
 						reg = <0x0 0x6>;
 						#nvmem-cell-cells = <1>;
 					};
+
+					/* "110a" on the harvested unit: TX 0x11, RX 0x0a. */
+					rgmii_delay: rgmii-delay@b2 {
+						reg = <0xb2 0x4>;
+					};
 				};
 			};
 
@@ -148,7 +157,16 @@
 
 			partition@4c0000 {
 				label = "ubi";
-				reg = <0x4c0000 0x7b40000>;
+				reg = <0x4c0000 0x7940000>;
+			};
+
+			/*
+			 * GL's mtdoops log. The 1.75 MiB after it is mapped by
+			 * nothing in GL's firmware, and is left alone here too.
+			 */
+			partition@7e00000 {
+				label = "log";
+				reg = <0x7e00000 0x40000>;
 			};
 		};
 	};
@@ -171,7 +189,7 @@
 				label = "wan";
 				phy-handle = <&switchphy0>;
 				phy-mode = "internal";
-				nvmem-cells = <&macaddr_factory_0 1>;
+				nvmem-cells = <&macaddr_factory_0 0>;
 				nvmem-cell-names = "mac-address";
 			};
 

@@ -117,8 +117,12 @@ log "Configuring"
   for d in ${devices}; do
     echo "CONFIG_TARGET_DEVICE_${TARGET}_${SUBTARGET}_DEVICE_${d}=y"
   done
-  # Every kmod, since the ImageBuilder is their only source.
+  # Every kmod and every package built per target (dropbear among them), as
+  # the release's buildbot builds them, since the ImageBuilder is their only
+  # source: a target's packages are published with its kmods, and this
+  # target publishes neither.
   echo "CONFIG_ALL_KMODS=y"
+  echo "CONFIG_ALL_NONSHARED=y"
   # The release's version and repository, so the ImageBuilder installs the
   # release's userland and an image says which release it is.
   echo "CONFIG_VERSIONOPT=y"

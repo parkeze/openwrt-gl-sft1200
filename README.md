@@ -122,11 +122,14 @@ Linux, on a case-sensitive filesystem, with
    reflash cannot bring back.
 2. **Settle what is unverified here**: the serial pads, and whether the
    slide switch's events are wanted for anything.
-3. **Boot from RAM first**, if the serial console is reachable: interrupt
-   autoboot (2 s), `tftpboot 0x81000000 <initramfs-kernel.bin>`, `bootm`.
-   That writes nothing. Then install `squashfs-factory.img` with GL's U-Boot
-   web recovery, below, through its "Update firmware" page only: the same
-   page also offers U-Boot and ART uploads.
+3. **The first boot is a flash.** GL's firmware has no kexec, and its U-Boot
+   netboots only after an interrupt on the serial console, so without serial
+   there is no RAM boot. Install `squashfs-factory.img` with GL's U-Boot web
+   recovery, below, through its "Update firmware" page only: the same page
+   also offers U-Boot and ART uploads. The way back is the same recovery with
+   GL's own image. With serial, `initramfs-kernel.bin` boots from RAM first
+   and writes nothing: interrupt autoboot (2 s), `tftpboot 0x81000000 <file>`,
+   `bootm`.
 
 ## Recovery
 
